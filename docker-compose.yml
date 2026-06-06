@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: booking
+      POSTGRES_PASSWORD: booking_pass
+      POSTGRES_DB: booking_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booking -d booking_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://booking:booking_pass@db:5432/booking_db
+      SECRET_KEY: "super-secret-key-change-in-production"
+      ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
